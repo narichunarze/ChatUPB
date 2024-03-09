@@ -1,6 +1,5 @@
 package edu.upb.chatupb.db;
 
-import com.mysql.cj.protocol.Message;
 import edu.upb.chatupb.server.objects.Contacto;
 import edu.upb.chatupb.server.objects.Mensaje;
 
@@ -139,8 +138,8 @@ public class ControladorBD {
         }
     }
 
-    private static List<Message> getListMessages(ResultSet resultSet) throws SQLException {
-        List<Message> queryRes = new ArrayList<>();
+    private static List<Mensaje> getListMessages(ResultSet resultSet) throws SQLException {
+        List<Mensaje> queryRes = new ArrayList<>();
         while (resultSet.next()) {
             String messageId = resultSet.getString("IdMensaje");
             String codReceiver = resultSet.getString("IdReceptor");
@@ -152,8 +151,6 @@ public class ControladorBD {
         return queryRes;
     }
 }
-
-
 
 
 
