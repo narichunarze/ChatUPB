@@ -267,12 +267,31 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         DeleteHistoryBTTN.setBackground(new java.awt.Color(243, 210, 193));
         DeleteHistoryBTTN.setText("Delete History");
 
+
         CambiarTemaBTTN.setBackground(new java.awt.Color(243, 210, 193));
         CambiarTemaBTTN.setText("Change Theme");
-        CambiarTemaBTTN.addActionListener(new ActionListener() {
+        DeleteHistoryBTTN.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jPopupMenu.show(CambiarTemaBTTN, 0, 0);
+                Contacto selectedContact = contactList.getSelectedValue();
+                // Verificar si se ha seleccionado un contacto
+                if (selectedContact != null) {
+                    JOptionPane.showMessageDialog(null, "Eliminando mensajes con " + selectedContact.getName());
+                    BorrarHistorial borrarHistorial = BorrarHistorial.builder()
+                            .tipo("006")
+                            .codigoPersona(selectedContact.getId())
+                            .build();
+                    // Eliminar todos los mensajes del contacto seleccionado
+                    ControladorBD.deleteMessages(selectedContact.getId(),idPropio);
+
+                    Mediador.sendMessage(selectedContact.getIp(), borrarHistorial);
+                    chatList.repaint();
+                    chatList.revalidate();
+
+                } else {
+                    // Si no se ha seleccionado un contacto, mostrar un mensaje de error
+                    JOptionPane.showMessageDialog(null, "Por favor, selecciona un contacto antes de eliminar los mensajes.");
+                }
             }
         });
         tema0.addActionListener(new ActionListener() {
@@ -736,7 +755,6 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     }
 
 
-
     /**
      * @param args the command line arguments
      */
@@ -869,13 +887,14 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
 
         JDialog dialog = createDialog(this, "Aceptacion", (acceptedContact.getNombre()));
         dialog.setVisible(true);
-        contactList.repaint();
+
 
         ControladorBD.insertContact(acceptedContact.getCodigoPersona(),
                 acceptedContact.getNombre(),
                 ((AceptarInvitacion) comando).getIp());
 
         fillContactList();
+        contactList.repaint();
     }
 
 
@@ -889,9 +908,11 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         modelChat.clear();
         getChat(chat.getCodigoPersona(), chat.getCodigoMensaje());
 
-        String[] palabrasClave = {"clima", "tiempo", "SantaCruz", "Cochabamba"};
+        String[] palabrasClave = {"clima","Clima", "tiempo","Tiempo","Santa Cruz", "Cochabamba"};
+
+
         Expresion expresion = new PalabraClave(palabrasClave);
-        System.out.println("mensaje sin espacios: "+chat.getMensaje().trim());
+        System.out.println("mensaje sin espacios: " + chat.getMensaje().trim());
 
         try {
             if (expresion.evalua(chat.getMensaje().trim())) {
@@ -952,9 +973,38 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
 
     @Override
     public void onDeleteHistory(Comando comando, String ipAddres) {
-        JDialog dialog = createDialog(this, "Borrar Chat",
-                ((BorrarHistorial) comando).toString());
-        dialog.show();
+        BorrarHistorial borrarHistorial = (BorrarHistorial) comando;
+        System.out.println("llego a ondelete chatui");
+
+        // Mostrar un cuadro de diálogo de confirmación al usuario
+        Object[] options = {"Aceptar", "Rechazar"};
+        int choice = JOptionPane.showOptionDialog(this,
+                "¿Estás seguro de que deseas borrar el historial?",
+                "Confirmar borrado de historial",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        // Manejar la respuesta del usuario
+        switch (choice) {
+            case JOptionPane.YES_OPTION:
+                try {
+                    // Llamar al método para eliminar los mensajes del contacto
+                    ControladorBD.deleteMessages(borrarHistorial.getCodigoPersona(),idPropio);
+                    JOptionPane.showMessageDialog(this, "El historial ha sido borrado exitosamente.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al intentar borrar el historial.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                break;
+            case JOptionPane.NO_OPTION:
+                JOptionPane.showMessageDialog(this, "El borrado de historial ha sido cancelado.", "Cancelado", JOptionPane.INFORMATION_MESSAGE);
+                break;
+            default:
+                break;
+        }
 
     }
 

@@ -1,4 +1,4 @@
-package edu.upb.chatupb.event;
+package edu.upb.chatupb.Interpreter;
 
 public interface ExpresionInterface {
     boolean interpretar(String mensaje);

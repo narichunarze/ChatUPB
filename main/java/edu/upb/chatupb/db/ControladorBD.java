@@ -150,7 +150,35 @@ public class ControladorBD {
         }
         return queryRes;
     }
+    public static void deleteMessages(String idContacto, String idPropio) {
+        // Construir la consulta SQL para eliminar los mensajes del contacto y los tuyos
+        String query = "DELETE FROM mensajes WHERE (IdReceptor = ? AND IdEmisor = ?) OR (IdReceptor = ? AND IdEmisor = ?)";
+
+        // Preparar la declaración y establecer los parámetros
+        try (Connection con = ConnectionDB.instance.getConnection();
+             PreparedStatement statement = con.prepareStatement(query)) {
+            // Establecer los parámetros en la consulta SQL
+            statement.setString(1, idPropio);
+            statement.setString(2, idContacto);
+            statement.setString(3, idContacto);
+            statement.setString(4, idPropio);
+
+            // Ejecutar la consulta SQL
+            int rowsAffected = statement.executeUpdate();
+
+            // Verificar si se eliminaron mensajes y mostrar un mensaje de éxito
+            if (rowsAffected > 0) {
+                System.out.println("Se eliminaron los mensajes del contacto seleccionado y los tuyos en ese chat.");
+            } else {
+                System.out.println("No se encontraron mensajes para eliminar.");
+            }
+        } catch (SQLException e) {
+            // Manejar cualquier excepción SQL
+            e.printStackTrace();
+        }
+    }
 }
+
 
 
 

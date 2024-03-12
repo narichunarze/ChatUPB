@@ -20,7 +20,7 @@ public class ClientePrueba {
 
     public static void main(String[] arg) {
         try {
-            Socket socket = new Socket("192.168.0.18", 1900); //Lab1
+            Socket socket = new Socket("172.16.76.163", 1900); //Lab1
            //Socket socket = new Socket("127.0.0.1", 1900); //casa
             //Socket socket = new Socket("172.16.76.111", 1900); //A1
 
@@ -36,9 +36,9 @@ public class ClientePrueba {
             String nombre = String.format("%-" + 60 + "s", "Prueba6");
             String idPropio="4496f66e-2893-4b56-a923-53c45fa64a14";
             ///String mensaje = "001"+uuidPersona+String.format("%-" + 60 + "s", "Prueba2")+"ahora si?"+"aljbd" +System.lineSeparator();
-          String mensaje = "003"+uuidMensaje.toString()+idPropio+"Como esta el clima en Santa Cruz?"+System.lineSeparator();
+          //String mensaje = "003"+uuidMensaje.toString()+idPropio+"Como esta el clima en Santa Cruz?"+System.lineSeparator();
            //String mensaje = "005"+"1"+uuidPersona+System.lineSeparator();
-            //String ensaje="009";
+            String mensaje="006"+idPropio;
             System.out.println(mensaje);
             dout.write(mensaje.getBytes("UTF-8"));
             dout.flush();

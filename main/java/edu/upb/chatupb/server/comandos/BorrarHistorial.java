@@ -37,6 +37,9 @@ public class BorrarHistorial implements Comando {
         BorrarHistorial contacto = new BorrarHistorial();
         String comando = message.substring(0,3);
         String codigoPersona = message.substring(3);
+        System.out.println("comando: "+comando);
+        System.out.println("codigopersona: "+codigoPersona);
+
 
         contacto.tipo = comando;
         contacto.codigoPersona = codigoPersona;

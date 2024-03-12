@@ -4,6 +4,8 @@
  */
 package edu.upb.chatupb.Interpreter;
 
+import edu.upb.chatupb.event.OperadorO;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

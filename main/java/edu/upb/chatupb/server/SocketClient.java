@@ -128,6 +128,7 @@ public class SocketClient extends Thread {
                     }
 
                     case C_DELETEHISTORY -> {
+                        System.out.println("llega a on delete");
                         Comando comandoBorrar = BorrarHistorial.parseo(message);
                         Mediador.sendEventDeleteHistory(comandoBorrar);
                     }
