@@ -17,20 +17,19 @@ import edu.upb.chatupb.server.ChatServer;
 import edu.upb.chatupb.server.Mediador;
 import edu.upb.chatupb.server.SocketClient;
 import edu.upb.chatupb.server.comandos.*;
+import edu.upb.chatupb.server.objects.ChatInfo;
 import edu.upb.chatupb.server.objects.Contacto;
-import edu.upb.chatupb.server.objects.Mensaje;
 import lombok.Getter;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.net.InetAddress;
+import java.awt.event.*;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Scanner;
 import java.util.UUID;
 
 /**
@@ -46,24 +45,22 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     String nombrePropio = "Nari Chun";
     String idPropio = "4496f66e-2893-4b56-a923-53c45fa64a18";
     private SocketClient socketClient;
-    private Contacto contactoSeleccionado;
+
     JPopupMenu jPopupMenu = new JPopupMenu();
     JMenuItem tema0 = new JMenuItem("Default");
     JMenuItem tema1 = new JMenuItem("Light");
     JMenuItem tema2 = new JMenuItem("Dark");
     JMenuItem tema3 = new JMenuItem("Clown");
+    JPopupMenu jPopupMenu1 = new JPopupMenu();
+    JMenuItem editItem = new JMenuItem("Edit");
 
-
-    InetAddress localhost;
-
-    private String selectedContact;
 
     public ChatUI(SocketClient socketClient) {
         this.socketClient = socketClient;
     }
 
     DefaultListModel<Contacto> modelContact;
-    DefaultListModel<String> modelChat;
+    DefaultListModel<ChatInfo> modelChat;
     DefaultListModel<Contacto> newModel = new DefaultListModel<>();
 
 
@@ -74,19 +71,17 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         initComponents();
         createPopUpMenu();
 
-        jPanel1.setBackground(new Color(139, 211, 221));
+
         conn = ControladorBD.getInstance().getConnection(); // Obtener la conexión directamente desde ControladorDB
 
         // Crear un objeto Scanner para aceptar la entrada del usuario
-        Scanner scanner = new Scanner(System.in);
 
 
         try {
             this.chatServer = new ChatServer(this);
             this.chatServer.start();
-            chatList = new JList<String>();
             modelContact = new DefaultListModel<>();
-            modelChat = new DefaultListModel<String>();
+            modelChat = new DefaultListModel<ChatInfo>();
 
             this.contactList.setModel(modelContact);
             this.chatList.setModel(modelChat);
@@ -100,17 +95,25 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
             fillUserInfo();
             fillComboBoxContactos();
             Mediador.addSocketEventListener(this);
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void createPopUpMenu() {
+        System.out.println("createPopUp");
         jPopupMenu.add(tema0);
         jPopupMenu.add(tema1);
         jPopupMenu.add(tema2);
         jPopupMenu.add(tema3);
     }
+    /*private void showPopupMenu() {
+        System.out.println("showpop");
+        jPopupMenu1.add(editItem);
+
+    }*/
 
 
     private void fillContactList() {
@@ -141,6 +144,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         }
     }
 
+
     private void fillComboBoxContactos() {
         /*DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
         java.util.List<Contacto> contactos = ControladorBD.getContacts();
@@ -165,23 +169,6 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     // Resto del código del constructor...
 
 
-    private JDialog createDialog(final JFrame frame, String message, String tittle, JButton... buttons) {
-        final JDialog modelDialog = new JDialog(frame, tittle,
-                Dialog.ModalityType.DOCUMENT_MODAL);
-        modelDialog.setBounds(132, 132, 300, 200);
-        Container dialogContainer = modelDialog.getContentPane();
-        dialogContainer.setLayout(new BorderLayout());
-        dialogContainer.add(new JLabel("    " + message),
-                BorderLayout.CENTER);
-        JPanel panel1 = new JPanel();
-        panel1.setLayout(new FlowLayout());
-        for (JButton button : buttons) {
-            panel1.add(button);
-        }
-        dialogContainer.add(panel1, BorderLayout.SOUTH);
-        return modelDialog;
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -201,13 +188,13 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         DeleteHistoryBTTN = new javax.swing.JButton();
         CambiarTemaBTTN = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        chatList = new JList<String>();
         jPanel2 = new javax.swing.JPanel();
         jTextField2 = new javax.swing.JTextField();
         BuzzBTTN = new javax.swing.JButton();
         EditProfileBTTN = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         contactList = new javax.swing.JList<>();
+        chatList = new javax.swing.JList<>();
         SendContactButton = new javax.swing.JButton();
         SendInviteBTTN = new javax.swing.JButton();
 
@@ -263,13 +250,20 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
             }
         });
 
-
         DeleteHistoryBTTN.setBackground(new java.awt.Color(243, 210, 193));
         DeleteHistoryBTTN.setText("Delete History");
 
 
         CambiarTemaBTTN.setBackground(new java.awt.Color(243, 210, 193));
         CambiarTemaBTTN.setText("Change Theme");
+        CambiarTemaBTTN.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jPopupMenu.show(CambiarTemaBTTN, 0, 0);
+            }
+        });
+
+
         DeleteHistoryBTTN.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -282,11 +276,10 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
                             .codigoPersona(selectedContact.getId())
                             .build();
                     // Eliminar todos los mensajes del contacto seleccionado
-                    ControladorBD.deleteMessages(selectedContact.getId(),idPropio);
+                    ControladorBD.deleteMessages(selectedContact.getId(), idPropio);
 
                     Mediador.sendMessage(selectedContact.getIp(), borrarHistorial);
                     chatList.repaint();
-                    chatList.revalidate();
 
                 } else {
                     // Si no se ha seleccionado un contacto, mostrar un mensaje de error
@@ -386,6 +379,78 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         });
 
         jScrollPane2.setViewportView(chatList);
+        chatList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+
+                System.out.println("llegue a list chat");
+
+                if (!evt.getValueIsAdjusting()) { // Para evitar eventos duplicados
+
+                    int selectedIndex = chatList.getSelectedIndex();
+                    if (selectedIndex != -1) { // Verifica si hay un elemento seleccionado
+                        Point mouseLocation = MouseInfo.getPointerInfo().getLocation(); // Obtiene la ubicación del ratón
+                        SwingUtilities.convertPointFromScreen(mouseLocation, chatList); // Calcular posición y en función del índice seleccionado
+
+                        jPopupMenu1.removeAll(); // Limpiar el menú emergente antes de agregar elementos
+                        jPopupMenu1.add(editItem); // Agregar el elemento "Editar" al menú emergente
+
+                        jPopupMenu1.show(chatList, (int) mouseLocation.getX(), (int) mouseLocation.getY());// Mostrar el menú emergente en las coordenadas del ratón
+
+
+                    }
+                }
+            }
+
+        });
+        editItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ChatInfo selectedMessage = chatList.getSelectedValue();
+                Contacto selectedContact = contactList.getSelectedValue();
+                if (selectedMessage != null && selectedMessage.getIdSender().equals(idPropio)) {
+                    String messageId = selectedMessage.getIdMessage();
+                    String messageText = selectedMessage.getMessage();
+
+                    // Obtener solo el mensaje sin el nombre del remitente
+                    String[] parts = messageText.split(": ", 2); // Dividir la cadena en dos partes usando ": " como separador
+                    String messageOnly = parts[1]; // Obtener la segunda parte que contiene el mensaje
+
+                    JTextField textField = new JTextField(messageOnly);
+
+                    JPanel panel = new JPanel();
+                    panel.add(new JLabel("Nuevo mensaje:"));
+                    panel.add(textField);
+
+                    int result = JOptionPane.showConfirmDialog(null, panel, "Editar mensaje",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                    if (result == JOptionPane.OK_OPTION) {
+                        String newMessage = textField.getText();
+                        if (!newMessage.isEmpty()) {
+                            EditarMensaje editarMensaje = EditarMensaje.builder()
+                                    .tipo("004")
+                                    .codigoMensaje(messageId)
+                                    .mensaje(newMessage)
+                                    .build();
+                            Mediador.sendMessage(selectedContact.getIp(), editarMensaje);
+                            try {
+                                // Actualizar el mensaje en la base de datos
+                                ControladorBD.actualizarMensaje(messageId, newMessage);
+                                System.out.println("Mensaje actualizado en la base de datos");
+
+                                // Actualizar la interfaz gráfica solo si el mensaje fue editado por el usuario actual
+                                selectedMessage.setMessage(newMessage); // Actualizar el mensaje en el objeto ChatInfo
+                                chatList.repaint(); // Volver a pintar la lista de chat para reflejar los cambios
+                            } catch (SQLException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "No tiene permisos para editar este mensaje.");
+                }
+            }
+        });
+
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -457,6 +522,8 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
                 contactListValueChanged(evt);
             }
         });
+
+
         jScrollPane1.setViewportView(contactList);
 
         SendContactButton.setText("Send Contact");
@@ -604,6 +671,13 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
             }
 
         });
+        EditProfileBTTN.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                EditProfileFrame editProfileFrame = new EditProfileFrame();
+                editProfileFrame.setVisible(true);
+            }
+        });
+
 
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -676,6 +750,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2ActionPerformed
@@ -685,7 +760,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     }//GEN-LAST:event_textAreaActionPerformed
 
     private void EditProfileBTTNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EditProfileBTTNActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_EditProfileBTTNActionPerformed
 
     private void SendTextBTTNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SendTextBTTNActionPerformed
@@ -693,28 +768,28 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     }//GEN-LAST:event_SendTextBTTNActionPerformed
 
     private void getChat(String contactID, String contactName) {
-        java.util.List<Mensaje> messagesListDB = ControladorBD.getMessages(idPropio, contactID);
-        DefaultListModel<String> model = new DefaultListModel<>();
+        java.util.List<ChatInfo> messagesListDB = ControladorBD.getMessages(idPropio, contactID);
+        DefaultListModel<ChatInfo> model = new DefaultListModel<>();
 
-        if (messagesListDB == null) {
-            System.out.println("lista VACIA");
-            return;
+        if (messagesListDB == null) return;
+
+        for (ChatInfo message : messagesListDB) {
+            String text = message.getMessage();
+
+            if (message.getIdSender().equals(idPropio))
+                text = nombrePropio + ": " + text;
+            else
+                text = contactName + ": " + text;
+
+            message.setMessage(text);
+            model.addElement(message);
         }
 
-        for (Mensaje message : messagesListDB) {
-            String formattedMessage;
-            if (message.getIdSender().equals(idPropio)) {
-                formattedMessage = nombrePropio + ": " + message.getMessage();
-            } else {
-                formattedMessage = contactName + ": " + message.getMessage();
-            }
-            model.addElement(formattedMessage);
-        }
-
-        // Establecer el modelo de la lista de chat con el modelo creado
         chatList.setModel(model);
-
     }
+
+
+
 
     private void contactListValueChanged(ListSelectionEvent evt) {
         Contacto selectedContact = contactList.getSelectedValue();
@@ -723,6 +798,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
             getChat(selectedContact.getId(), selectedContact.getName());
         }
     }
+
 
     private void sendTextArea(ActionEvent actionEvent) {
         Contacto selectedContact = contactList.getSelectedValue();
@@ -799,7 +875,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     private javax.swing.JButton SendContactButton;
     private javax.swing.JButton SendInviteBTTN;
     private javax.swing.JButton SendTextBTTN;
-    private JList<String> chatList;
+    private JList<ChatInfo> chatList;
     private javax.swing.JList<Contacto> contactList;
     private javax.swing.JDialog jDialog1;
     private javax.swing.JDialog jDialog2;
@@ -897,19 +973,26 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
         contactList.repaint();
     }
 
-
     @Override
     public void onChat(Comando comando) throws SQLException {
         Contacto selectedContact = contactList.getSelectedValue();
         Chat chat = (Chat) comando;
-
+        System.out.println("llegue a onChat");
         ControladorBD.insertMessage(chat.getCodigoMensaje(), idPropio, chat.getCodigoPersona(), chat.getMensaje());
-        modelChat.addElement(chat.getMensaje());
+        ChatInfo newChatInfo = new ChatInfo(chat.getCodigoMensaje(),idPropio,chat.getCodigoPersona(),chat.getMensaje());
+        newChatInfo.setIdMessage(chat.getCodigoMensaje());
+        newChatInfo.setMessage(chat.getMensaje());
+        System.out.println("mensaje on chat: "+chat.getMensaje());
+        System.out.println("codigo persona on chat: "+chat.getCodigoPersona());
+        // Configura otros campos según sea necesario en ChatInfo
+
+        modelChat.addElement(newChatInfo); // Agrega el nuevo mensaje al modelo
+
+        // Limpia y actualiza la lista de chat
         modelChat.clear();
         getChat(chat.getCodigoPersona(), chat.getCodigoMensaje());
 
-        String[] palabrasClave = {"clima","Clima", "tiempo","Tiempo","Santa Cruz", "Cochabamba"};
-
+        String[] palabrasClave = {"clima", "Clima", "tiempo", "Tiempo", "Santa Cruz", "Cochabamba"};
 
         Expresion expresion = new PalabraClave(palabrasClave);
         System.out.println("mensaje sin espacios: " + chat.getMensaje().trim());
@@ -934,11 +1017,33 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
     }
 
 
+
     @Override
-    public void onEditMessage(Comando comando, String ipAddres) {
-        JDialog dialog = createDialog(this, "Editar Mensaje",
-                ((EditarMensaje) comando).getMensaje().toString());
-        dialog.show();
+    public void onEditMessage(Comando comando, String ipAddres) throws SQLException {
+        System.out.println("llegue a onEdit");
+        if (comando instanceof EditarMensaje) {
+            EditarMensaje editarMensaje = (EditarMensaje) comando;
+            String messageId = editarMensaje.getCodigoMensaje();
+            String newMessage = editarMensaje.getMensaje();
+
+            // Actualizar el mensaje en la base de datos
+            ControladorBD.actualizarMensaje(messageId, newMessage);
+            System.out.println("Mensaje actualizado en la base de datos");
+
+            // Actualizar la interfaz gráfica solo si el mensaje editado es visible en la lista de chat
+            // Recorremos la lista de mensajes y actualizamos el mensaje si se encuentra
+            for (int i = 0; i < modelChat.size(); i++) {
+                ChatInfo chatInfo = modelChat.getElementAt(i);
+                if (chatInfo.getIdMessage().equals(messageId)) {
+                    chatInfo.setMessage(newMessage); // Actualizar el mensaje en el objeto ChatInfo
+                    chatList.repaint();
+
+                    break; // Salir del bucle una vez que se ha actualizado el mensaje
+                }
+            }
+            JDialog dialog = createDialog(this,  "Se ha editado el mensaje: "+ messageId,"mensaje editado a : "+newMessage );// Volver a pintar la lista de chat para reflejar los cambios
+            dialog.show();
+        }
 
     }
 
@@ -992,7 +1097,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
             case JOptionPane.YES_OPTION:
                 try {
                     // Llamar al método para eliminar los mensajes del contacto
-                    ControladorBD.deleteMessages(borrarHistorial.getCodigoPersona(),idPropio);
+                    ControladorBD.deleteMessages(borrarHistorial.getCodigoPersona(), idPropio);
                     JOptionPane.showMessageDialog(this, "El historial ha sido borrado exitosamente.");
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -1099,6 +1204,7 @@ public class ChatUI extends javax.swing.JFrame implements SocketEvent {
 
     @Override
     public void onSearch(Comando comando, String ipAddres) {
+
         JDialog dialog = createDialog(this, "Busqueda",
                 ((Busqueda) comando).toString());
         dialog.show();

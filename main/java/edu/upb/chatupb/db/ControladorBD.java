@@ -1,8 +1,10 @@
 package edu.upb.chatupb.db;
 
+import edu.upb.chatupb.server.objects.ChatInfo;
 import edu.upb.chatupb.server.objects.Contacto;
 import edu.upb.chatupb.server.objects.Mensaje;
 
+import javax.swing.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,12 +19,30 @@ public class ControladorBD {
 
 
     public static boolean insertContact(String idPersona, String nombre, String ip) {
-        try (Connection conn = ConnectionDB.instance.getConnection();
-             PreparedStatement ps = conn.prepareStatement("INSERT INTO mensajeria.contactos VALUES (?, ?,?)")) {
-            ps.setString(1, idPersona);
-            ps.setString(2, nombre);
-            ps.setString(3, ip);
-            ps.executeUpdate();
+        try (Connection conn = ConnectionDB.instance.getConnection()) {
+            // Verificar si el nombre ya existe en la base de datos
+            PreparedStatement psSelect = conn.prepareStatement("SELECT COUNT(*) FROM mensajeria.contactos WHERE IdPersona = ?");
+            psSelect.setString(1, idPersona);
+            ResultSet rs = psSelect.executeQuery();
+            rs.next();
+            int count = rs.getInt(1);
+            rs.close();
+
+            // Si el nombre ya existe, actualizar la dirección IP
+            if (count > 0) {
+                PreparedStatement psUpdate = conn.prepareStatement("UPDATE mensajeria.contactos SET IpContacto = ? WHERE IdPersona = ?");
+                psUpdate.setString(1, ip);
+                psUpdate.setString(2, idPersona);
+                psUpdate.executeUpdate();
+                System.out.println("Se actualizó la dirección IP para el contacto: " + nombre);
+            } else { // Si el nombre no existe, insertar un nuevo contacto
+                PreparedStatement psInsert = conn.prepareStatement("INSERT INTO mensajeria.contactos VALUES (?, ?, ?)");
+                psInsert.setString(1, idPersona);
+                psInsert.setString(2, nombre);
+                psInsert.setString(3, ip);
+                psInsert.executeUpdate();
+                System.out.println("Se insertó un nuevo contacto: " + nombre);
+            }
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -30,6 +50,8 @@ public class ControladorBD {
             return false;
         }
     }
+
+
     public static List<Contacto> getContacts() {
         try (Connection con = ConnectionDB.instance.getConnection();
              PreparedStatement statement = con.prepareStatement("SELECT * FROM mensajeria.contactos")) {
@@ -76,13 +98,12 @@ public class ControladorBD {
             return null;
         }
     }
-    public static List<Mensaje> getMessages(String myId, String chatId) {
+    public static List<ChatInfo> getMessages(String myId, String chatId) {
         System.out.println("llegue a getMessages");
-        List<Mensaje> mensajesList = new ArrayList<>();
+        List<ChatInfo> mensajesList = new ArrayList<>();
 
         String combineQuery = "SELECT * FROM mensajeria.mensajes " +
                 "WHERE (IdEmisor = ? AND IdReceptor = ?) OR (IdReceptor = ? AND IdEmisor = ?)" + "ORDER BY FechaHora";
-
 
 
         try (Connection con = ConnectionDB.instance.getConnection()) {
@@ -99,9 +120,8 @@ public class ControladorBD {
                 String messageId=resultSet.getString("IdMensaje");
                 String idReceptor=resultSet.getString("IdReceptor");
                 String mensaje=resultSet.getString("Mensaje");
-                String fechaHora= resultSet.getString("FechaHora");
                 String IdEmisor=resultSet.getString("IdEmisor");
-                Mensaje mensaje1= new Mensaje(messageId,idReceptor,IdEmisor,fechaHora,mensaje);
+                ChatInfo mensaje1= new ChatInfo(messageId,idReceptor,IdEmisor,mensaje);
                 mensajesList.add(mensaje1);
 
             }
@@ -138,18 +158,6 @@ public class ControladorBD {
         }
     }
 
-    private static List<Mensaje> getListMessages(ResultSet resultSet) throws SQLException {
-        List<Mensaje> queryRes = new ArrayList<>();
-        while (resultSet.next()) {
-            String messageId = resultSet.getString("IdMensaje");
-            String codReceiver = resultSet.getString("IdReceptor");
-            String message = resultSet.getString("Mensaje");
-            String fechaHora = resultSet.getString("FechaHora");
-            String codSender = resultSet.getString("IdEmisor");
-
-        }
-        return queryRes;
-    }
     public static void deleteMessages(String idContacto, String idPropio) {
         // Construir la consulta SQL para eliminar los mensajes del contacto y los tuyos
         String query = "DELETE FROM mensajes WHERE (IdReceptor = ? AND IdEmisor = ?) OR (IdReceptor = ? AND IdEmisor = ?)";
@@ -177,6 +185,20 @@ public class ControladorBD {
             e.printStackTrace();
         }
     }
+
+    public static void actualizarMensaje(String idMensaje, String nuevoMensaje) throws SQLException {
+        PreparedStatement pstmt = null;
+
+        try(Connection con = ConnectionDB.instance.getConnection()){
+
+            String sql = "UPDATE Mensajes SET Mensaje = ? WHERE IdMensaje = ?";
+            pstmt = con.prepareStatement(sql);
+            pstmt.setString(1, nuevoMensaje);
+            pstmt.setString(2, idMensaje);
+            pstmt.executeUpdate();
+        }
+    }
+
 }
 
 

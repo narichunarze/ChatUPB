@@ -20,7 +20,7 @@ public interface SocketEvent extends EventListener {
 
     void onChat(Comando comando) throws SQLException;
 
-    void onEditMessage(Comando comando, String ipAddres);
+    void onEditMessage(Comando comando, String ipAddres) throws SQLException;
 
     void onChangeTheme(Comando comando, String ipAddres);
 

@@ -134,7 +134,11 @@ public class Mediador extends Thread {
             if (listeners[i] == SocketEvent.class) {
                 SocketEvent event = (SocketEvent) listeners[i + 1];
                 java.awt.EventQueue.invokeLater(() -> {
-                    event.onEditMessage(comando,"");
+                    try {
+                        event.onEditMessage(comando,"");
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 });
             }
         }

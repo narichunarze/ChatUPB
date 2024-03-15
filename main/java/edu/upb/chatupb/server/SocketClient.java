@@ -229,7 +229,7 @@ public class SocketClient extends Thread {
         }
     }
 
-    private void sendEventEditMessage(Comando comando,String ipAddres) {
+    private void sendEventEditMessage(Comando comando,String ipAddres) throws SQLException {
         Object[] listeners = listenerList.getListenerList();
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == SocketEvent.class) {

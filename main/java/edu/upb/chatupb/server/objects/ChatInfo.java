@@ -6,16 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 @AllArgsConstructor
-@Getter
-@Setter
+@Getter @Setter
 @Builder
 public class ChatInfo {
     String idMessage;
-    int messageOrder;
     String idReceiver;
     String idSender;
-    String date;
-    String time;
     String message;
 
     @Override
